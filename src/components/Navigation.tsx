@@ -1,7 +1,12 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Activity } from 'lucide-react';
+import { Menu, X, Activity, User, LogOut } from 'lucide-react';
 import { useState } from 'react';
+
+interface NavigationProps {
+  user?: any;
+  onSignOut?: () => void;
+}
 
 const navItems = [
   { name: 'Home', href: '#home' },
@@ -11,7 +16,7 @@ const navItems = [
   { name: 'Contact', href: '#contact' }
 ];
 
-export const Navigation = () => {
+export const Navigation: React.FC<NavigationProps> = ({ user, onSignOut }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const scrollToSection = (href: string) => {
@@ -64,9 +69,27 @@ export const Navigation = () => {
               </motion.button>
             ))}
             
-            <Button variant="default" className="bg-gradient-primary hover:opacity-90 shadow-glow-primary">
-              Get Started
-            </Button>
+            {user ? (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-glass backdrop-blur-glass border border-glass-border">
+                  <User className="w-4 h-4 text-primary" />
+                  <span className="text-sm text-foreground">{user.email}</span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={onSignOut}
+                  className="border-glass-border bg-gradient-glass backdrop-blur-glass"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
+            ) : (
+              <Button variant="default" className="bg-gradient-primary hover:opacity-90 shadow-glow-primary">
+                Get Started
+              </Button>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -103,9 +126,26 @@ export const Navigation = () => {
               </motion.button>
             ))}
             <div className="pt-2">
-              <Button className="w-full bg-gradient-primary hover:opacity-90">
-                Get Started
-              </Button>
+              {user ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-glass backdrop-blur-glass border border-glass-border">
+                    <User className="w-4 h-4 text-primary" />
+                    <span className="text-sm text-foreground">{user.email}</span>
+                  </div>
+                  <Button 
+                    onClick={onSignOut}
+                    variant="outline"
+                    className="w-full border-glass-border bg-gradient-glass backdrop-blur-glass"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+              ) : (
+                <Button className="w-full bg-gradient-primary hover:opacity-90">
+                  Get Started
+                </Button>
+              )}
             </div>
           </div>
         </motion.div>

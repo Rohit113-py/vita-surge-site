@@ -1,7 +1,10 @@
+import React, { useState, useEffect } from 'react';
 import { Navigation } from "@/components/Navigation";
 import { Hero3D } from "@/components/Hero3D";
 import { GlassCard, StatCard } from "@/components/GlassCard";
 import { HealthDataViz } from "@/components/HealthDataViz";
+import MedicalChat from '@/components/MedicalChat';
+import AuthModal from '@/components/AuthModal';
 import { motion } from "framer-motion";
 import { 
   Shield, 
@@ -13,14 +16,59 @@ import {
   ChevronRight,
   Microscope,
   Brain,
-  Activity
+  Activity,
+  MessageSquare,
+  Upload,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 const Index = () => {
+  const [showChat, setShowChat] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [user, setUser] = useState(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+        if (event === 'SIGNED_IN') {
+          setShowAuth(false);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleChatClick = () => {
+    if (!user) {
+      setShowAuth(true);
+    } else {
+      setShowChat(true);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Signed Out",
+      description: "You've been successfully signed out",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
-      <Navigation />
+      <Navigation user={user} onSignOut={handleSignOut} />
       
       {/* Hero Section with 3D Animation */}
       <Hero3D />
@@ -231,12 +279,20 @@ const Index = () => {
               </div>
               
               <div className="space-y-4">
-                <Button className="w-full bg-gradient-primary hover:opacity-90 shadow-glow-primary">
-                  Schedule a Demo
-                  <ChevronRight className="ml-2" size={20} />
+                <Button 
+                  onClick={handleChatClick}
+                  className="w-full bg-gradient-primary hover:opacity-90 shadow-glow-primary"
+                >
+                  <MessageSquare className="mr-2" size={20} />
+                  Start AI Medical Chat
                 </Button>
-                <Button variant="outline" className="w-full border-glass-border bg-gradient-glass backdrop-blur-glass">
-                  Download Whitepaper
+                <Button 
+                  variant="outline" 
+                  className="w-full border-glass-border bg-gradient-glass backdrop-blur-glass"
+                  onClick={handleChatClick}
+                >
+                  <Upload className="mr-2" size={20} />
+                  Upload Medical Scan
                 </Button>
               </div>
             </div>
@@ -275,6 +331,29 @@ const Index = () => {
           </p>
         </div>
       </footer>
+
+      {/* Floating AI Chat Button */}
+      <Button
+        onClick={handleChatClick}
+        className="fixed bottom-8 right-8 w-16 h-16 rounded-full bg-gradient-primary hover:opacity-90 shadow-glow-primary z-40 group"
+      >
+        <MessageSquare className="w-6 h-6 group-hover:scale-110 transition-transform duration-200" />
+      </Button>
+
+      {/* Modals */}
+      {showAuth && (
+        <AuthModal 
+          onClose={() => setShowAuth(false)} 
+          onSuccess={() => {
+            setShowAuth(false);
+            setShowChat(true);
+          }}
+        />
+      )}
+      
+      {showChat && user && (
+        <MedicalChat onClose={() => setShowChat(false)} />
+      )}
     </div>
   );
 };
